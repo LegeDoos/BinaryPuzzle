@@ -118,14 +118,17 @@ namespace BinaryPuzzle
         private void ValidatePuzzle()
         {
             // check for double rows and double columns
-            if (FindDoubleRows(null, 1))
+            if (FindDoubleRowsOrColumns(null, 1, RowOrCol.Row))
             {
                 throw new Exception("Double rows found");
             }
+            if (FindDoubleRowsOrColumns(null, 1, RowOrCol.Col))
+            {
+                throw new Exception("Double columns found");
+            }
         }
 
-
-        private bool FindDoubleRows(List<int>? same, int pos)
+        private bool FindDoubleRowsOrColumns(List<int>? same, int pos, RowOrCol rowOrCol)
         {
             List<int> trues = new List<int>();
             List<int> falses = new List<int>();
@@ -140,13 +143,13 @@ namespace BinaryPuzzle
                 // first time
                 pos = 1;
 
-                // dooloop alle rijen indien de eerste keer
+                // dooloop alle items indien de eerste keer
                 for (int i = 1; i <= Size; i++)
                 {
                     // als betreffende rij klaar is
-                    if (SetFinished(i, RowOrCol.Row))
-                    {
-                        if (Values[i, pos, 0])
+                    if (SetFinished(i, rowOrCol))
+                    {                        
+                        if (Values[rowOrCol == RowOrCol.Row ? i : pos, rowOrCol == RowOrCol.Row ? pos : i, 0])
                         {
                             trues.Add(i);
                         }
@@ -162,7 +165,7 @@ namespace BinaryPuzzle
                 // indien niet de eerste keer, dan doorloop de items uit de meegegeven verzameling
                 foreach (var item in same)
                 {
-                    if (Values[item, pos, 0])
+                    if (Values[rowOrCol == RowOrCol.Row ? item : pos, rowOrCol == RowOrCol.Col ? item : pos, 0])
                     {
                         trues.Add(item);
                     }
@@ -176,11 +179,11 @@ namespace BinaryPuzzle
             bool result = false;
             if (trues.Count > 1)
             {
-                result = result || FindDoubleRows(trues, pos + 1);
+                result = result || FindDoubleRowsOrColumns(trues, pos + 1, rowOrCol);
             }
             if (falses.Count > 1)
             {
-                result = result || FindDoubleRows(falses, pos + 1);
+                result = result || FindDoubleRowsOrColumns(falses, pos + 1, rowOrCol);
             }
             return result;
         }

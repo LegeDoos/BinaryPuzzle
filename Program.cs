@@ -42,10 +42,10 @@
             puzzle.SetValue(5, 6, true);
             puzzle.SetValue(6, 6, true);
             puzzle.SetValue(7, 6, false);
-            puzzle.SetValue(8, 6, false);
+            puzzle.SetValue(8, 6, true);
             puzzle.SetValue(9, 6, true);
-            puzzle.SetValue(10, 6, true);
-            puzzle.PrintPuzzle();       
+            puzzle.SetValue(10, 6, false);
+            puzzle.PrintPuzzle();        
         }
     }
 }
