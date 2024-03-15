@@ -50,7 +50,7 @@ namespace BinaryPuzzle
 
         public void PrintPuzzle()
         {
-            Console.Clear();
+            //Console.Clear();
 
             for (int i = 0; i <= Size; i++)
             {
@@ -79,6 +79,79 @@ namespace BinaryPuzzle
                     Console.WriteLine();
                 }
                 Console.WriteLine();
+            }
+        }
+
+        /// <summary>
+        /// Clone the puzzle
+        /// </summary>
+        /// <returns></returns>
+        private BinaryPuzzle Clone()
+        {
+            BinaryPuzzle clone = new(Size);
+            for (int i = 0; i <= Size; i++)
+            {
+                for (int j = 0; j <= Size; j++)
+                {
+                    clone.Values[i, j, 0] = Values[i, j, 0];
+                    clone.Values[i, j, 1] = Values[i, j, 1];
+                }
+            }
+            return clone;
+        }
+
+        public void Solve()
+        {
+            bool foundFreeSpot = false;
+            int i = 0;
+            int j = 0;
+            while (i < Size && !foundFreeSpot)
+            {
+                i++;
+                j = 0;
+                while (j < Size && !foundFreeSpot)
+                {
+                    j++;
+                    if (!Values[i, j, 1])
+                    {
+                        foundFreeSpot = true;
+                    }
+                }
+            }    
+            if (!foundFreeSpot)
+            {
+                // puzzle is solved
+                return;
+            }
+            else
+            {
+                if (i == 6 && j == 9)
+                {
+                    PrintPuzzle();
+                    Console.ReadLine();
+                }
+                try
+                {
+                    BinaryPuzzle clone = Clone();
+                    clone.SetValue(i, j, true);
+                    clone.Solve();
+                    Values = clone.Values;
+                }
+                catch (Exception)
+                {
+                    // if true leads to exception, try false
+                    try
+                    {
+                        BinaryPuzzle clone = Clone();
+                        clone.SetValue(i, j, false);
+                        clone.Solve();
+                        Values = clone.Values;
+                    }
+                    catch (Exception)
+                    {
+                        throw;
+                    }
+                }
             }
         }
 
@@ -200,11 +273,12 @@ namespace BinaryPuzzle
             int col = rowOrCol == RowOrCol.Col ? idToValidate : 0;
 
             // check the values
+            int trueCount = 0;
+            int falseCount = 0;
+
             for (int i = 1; i <= Size; i++)
             {
                 // check number of trues and falses
-                int trueCount = 0;
-                int falseCount = 0;
                 if (Values[rowOrCol == RowOrCol.Row ? row : i, rowOrCol == RowOrCol.Col ? col: i, 1])
                 {
                     if (Values[rowOrCol == RowOrCol.Row ? row : i, rowOrCol == RowOrCol.Col ? col : i, 0])
