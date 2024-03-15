@@ -27,6 +27,17 @@ namespace BinaryPuzzle
         /// <param name="puzzleSize">The size of the puzzle</param>
         public BinaryPuzzle(int puzzleSize)
         {
+            // puzzlesize should be even
+            if (puzzleSize % 2 != 0)
+            {
+                throw new Exception("Puzzle size should be even");
+            }
+            // puzzlesize should be at least 4
+            if (puzzleSize < 4)
+            {
+                throw new Exception("Puzzle size should be at least 4");
+            }
+
             Size = puzzleSize;
             Values = new bool[puzzleSize + 1, puzzleSize + 1, 2];
             // set the status of first row and column
@@ -79,8 +90,8 @@ namespace BinaryPuzzle
                 result = Values[row, col, 0] ? "1" : "0";
             }
             else
-            { 
-                result = "X";
+            {
+                result = ".";
             }
             return padding > 0 ? result.PadLeft(padding) : result;
         }
@@ -97,85 +108,167 @@ namespace BinaryPuzzle
             }
             Values[row, col, 1] = true;
             Values[row, col, 0] = value;
-            ValidateRow(row);
-            ValidateCol(col);
+            SetFinished(row, RowOrCol.Row);
+            Validate(row, RowOrCol.Row);
+            SetFinished(col, RowOrCol.Col);
+            Validate(col, RowOrCol.Col);
             ValidatePuzzle();
         }
 
         private void ValidatePuzzle()
         {
             // check for double rows and double columns
-            
-            // if finished row count > 1
-            // todo finish this
-        }
-
-        private void ValidateRow(int row)
-        {
-            if (RowFinished(row))
+            if (FindDoubleRows(null, 1))
             {
-                Values[row, 0, 0] = true;
-            }
-            // check the values
-            for (int i = 3; i <= Size; i++)
-            {
-                if (Values[row, i - 2, 1] && Values[row, i - 1, 1] && Values[row, i, 1])
-                {
-                    // last three are set
-                    if ((Values[row, i - 2, 0] && Values[row, i - 1, 0] && Values[row, i, 0])
-                        || (!Values[row, i - 2, 0] && !Values[row, i - 1, 0] && !Values[row, i, 0]))
-                    {
-                        // three values the same
-                        throw new Exception("Invalid row");
-                    }
-                }
+                throw new Exception("Double rows found");
             }
         }
 
-        private void ValidateCol(int col)
+
+        private bool FindDoubleRows(List<int>? same, int pos)
         {
-            if (ColFinished(col))
+            List<int> trues = new List<int>();
+            List<int> falses = new List<int>();
+
+            if (pos > Size)
             {
-                Values[0, col, 0] = true;
+                return true;
             }
-            // check the values
-            for (int i = 3; i <= Size; i++)
+
+            if (same == null)
             {
-                if (Values[i - 2, col, 1] && Values[i - 1, col, 1] && Values[i, col, 1])
+                // first time
+                pos = 1;
+
+                // dooloop alle rijen indien de eerste keer
+                for (int i = 1; i <= Size; i++)
                 {
-                    // last three are set
-                    if ((Values[i - 2, col, 0] && Values[i - 1, col, 0] && Values[i, col, 0])
-                        || (!Values[i - 2, col, 0] && !Values[i - 1, col, 0] && !Values[i, col, 0]))
+                    // als betreffende rij klaar is
+                    if (SetFinished(i, RowOrCol.Row))
                     {
-                        // three values the same
-                        throw new Exception("Invalid col");
+                        if (Values[i, pos, 0])
+                        {
+                            trues.Add(i);
+                        }
+                        else
+                        {
+                            falses.Add(i);
+                        }
                     }
                 }
             }
+            else
+            {
+                // indien niet de eerste keer, dan doorloop de items uit de meegegeven verzameling
+                foreach (var item in same)
+                {
+                    if (Values[item, pos, 0])
+                    {
+                        trues.Add(item);
+                    }
+                    else
+                    {
+                        falses.Add(item);
+                    }
+                }
+            }
+
+            bool result = false;
+            if (trues.Count > 1)
+            {
+                result = result || FindDoubleRows(trues, pos + 1);
+            }
+            if (falses.Count > 1)
+            {
+                result = result || FindDoubleRows(falses, pos + 1);
+            }
+            return result;
         }
-        private bool RowFinished(int row)
+
+        /// <summary>
+        /// Validate the row or column
+        /// </summary>
+        /// <param name="idToValidate">The id to validate</param>
+        /// <param name="rowOrCol">Enum determining row or column</param>
+        /// <exception cref="Exception">when not valid</exception>
+        private void Validate(int idToValidate, RowOrCol rowOrCol)
         {
+            int row = rowOrCol == RowOrCol.Row ? idToValidate : 0;
+            int col = rowOrCol == RowOrCol.Col ? idToValidate : 0;
+
+            // check the values
             for (int i = 1; i <= Size; i++)
             {
-                if (!Values[row, i, 1])
+                // check number of trues and falses
+                int trueCount = 0;
+                int falseCount = 0;
+                if (Values[rowOrCol == RowOrCol.Row ? row : i, rowOrCol == RowOrCol.Col ? col: i, 1])
+                {
+                    if (Values[rowOrCol == RowOrCol.Row ? row : i, rowOrCol == RowOrCol.Col ? col : i, 0])
+                        trueCount++;
+                    else
+                        falseCount++;
+                }
+                if (trueCount > Size / 2 || falseCount > Size / 2)
+                {
+                    throw new Exception($"Too many same values in {rowOrCol}");
+                }
+
+                if (rowOrCol == RowOrCol.Row)
+                {
+                    if (i >= 3 && Values[row, i - 2, 1] && Values[row, i - 1, 1] && Values[row, i, 1])
+                    {
+                        // last three are set
+                        if ((Values[row, i - 2, 0] && Values[row, i - 1, 0] && Values[row, i, 0])
+                            || (!Values[row, i - 2, 0] && !Values[row, i - 1, 0] && !Values[row, i, 0]))
+                        {
+                            // three values the same
+                            throw new Exception("Invalid row");
+                        }
+                    }
+                }
+                else
+                {
+                    if (i >= 3 && Values[i - 2, col, 1] && Values[i - 1, col, 1] && Values[i, col, 1])
+                    {
+                        // last three are set
+                        if ((Values[i - 2, col, 0] && Values[i - 1, col, 0] && Values[i, col, 0])
+                            || (!Values[i - 2, col, 0] && !Values[i - 1, col, 0] && !Values[i, col, 0]))
+                        {
+                            // three values the same
+                            throw new Exception("Invalid col");
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Check if the row or column is finished and set finished flag
+        /// </summary>
+        /// <param name="idToFinish">The id of the row or column</param>
+        /// <param name="rowOrCol">Enum determining row or column</param>
+        /// <returns>True when finished</returns>
+        private bool SetFinished(int idToFinish, RowOrCol rowOrCol)
+        {
+            int row = rowOrCol == RowOrCol.Row ? idToFinish : 0;
+            int col = rowOrCol == RowOrCol.Col ? idToFinish : 0;
+
+            if (Values[row, col, 0])
+            {
+                // return true if finish flag is set
+                return true;
+            }
+            // else determine if row is finished
+            for (int i = 1; i <= Size; i++)
+            {
+                if (!Values[rowOrCol == RowOrCol.Row ? row : i, rowOrCol == RowOrCol.Col ? col : i, 1])
                 {
                     // row not finished
                     return false;
                 }
             }
-            return true;
-        }
-
-        private bool ColFinished(int col)
-        {
-            for (int i = 1; i <= Size; i++)
-            {
-                if (!Values[i, col, 1])
-                {
-                    // col not finished
-                    return false;
-                }
-            }
+            Values[row, col, 0] = true;
             return true;
         }
     }
